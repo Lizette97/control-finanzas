@@ -1,3 +1,18 @@
+// Configuración de Firebase (copia esta parte desde la consola de Firebase)
+const firebaseConfig = {
+  apiKey: "TU_API_KEY",
+  authDomain: "TU_AUTH_DOMAIN",
+  projectId: "TU_PROJECT_ID",
+  storageBucket: "TU_STORAGE_BUCKET",
+  messagingSenderId: "TU_MESSAGING_SENDER_ID",
+  appId: "TU_APP_ID"
+};
+
+// Inicializar Firebase
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
 // Variables principales
 const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 let mesActual = 0;
@@ -18,79 +33,36 @@ function cambiarMes(direccion) {
   actualizarUI();
 }
 
-// Actualizar ingresos
-function actualizarTotales() {
-  const ingreso = parseFloat(document.getElementById("ingresos").value) || 0;
-  datosPorMes[mesActual].ingresosTotales += ingreso;
-  document.getElementById("ingresos").value = "";
-  generarRecordatorios();
-  actualizarUI();
+// Login
+function login() {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  auth.signInWithEmailAndPassword(email, password)
+    .then(userCredential => {
+      const user = userCredential.user;
+      document.getElementById("login-section").style.display = "none";  // Ocultar login
+      actualizarUI();
+    })
+    .catch(error => {
+      document.getElementById("login-error").innerText = "Error: " + error.message;
+    });
 }
 
-// Agregar gastos
-function agregarGasto() {
-  const nombre = document.getElementById("nombre-gasto").value;
-  const monto = parseFloat(document.getElementById("monto-gasto").value) || 0;
+// Registro
+function registrar() {
+  const email = document.getElementById("registro-email").value;
+  const password = document.getElementById("registro-password").value;
 
-  if (nombre && monto > 0) {
-    datosPorMes[mesActual].egresosTotales += monto;
-    datosPorMes[mesActual].gastos.push({ nombre, monto });
-
-    document.getElementById("nombre-gasto").value = "";
-    document.getElementById("monto-gasto").value = "";
-    generarRecordatorios();
-    actualizarUI();
-  }
-}
-
-// Guardar ahorros
-function guardarAhorros() {
-  const ahorro = parseFloat(document.getElementById("ahorros").value) || 0;
-
-  if (ahorro > 0) {
-    datosPorMes[mesActual].totalAhorros += ahorro;
-    datosPorMes[mesActual].egresosTotales += ahorro;
-    document.getElementById("ahorros").value = "";
-    generarRecordatorios();
-    actualizarUI();
-  }
-}
-
-// Guardar notas
-function guardarNotas() {
-  const nota = document.getElementById("notas").value;
-  if (nota.trim() !== "") {
-    datosPorMes[mesActual].notas.push(nota);
-    document.getElementById("notas").value = "";
-    actualizarUI();
-  }
-}
-
-// Generar recordatorios automáticos
-function generarRecordatorios() {
-  const datos = datosPorMes[mesActual];
-  const saldo = datos.ingresosTotales - datos.egresosTotales;
-  let recordatorio = "";
-
-  if (saldo < 0) {
-    recordatorio = "⚠️ ¡Tu saldo está en números rojos! Revisa tus gastos.";
-  } else if (datos.totalAhorros >= 5000) {
-    recordatorio = "🎉 ¡Felicidades! Has alcanzado un ahorro significativo.";
-  } else if (datos.egresosTotales > datos.ingresosTotales * 0.8) {
-    recordatorio = "⚠️ Cuidado, tus gastos están consumiendo más del 80% de tus ingresos.";
-  }
-
-  // Agregar recordatorio adicional
-  if (datos.egresosTotales > 0 && datos.egresosTotales < 1000) {
-    recordatorio = "📝 Tienes que ahorrar por lo menos $1000 este mes.";
-  }
-
-  // Recordatorio para la renta
-  if (!recordatorio) {
-    recordatorio = "🏠 Tienes que pagar la renta antes del día 15.";
-  }
-
-  document.getElementById("recordatorios-automaticos").innerText = recordatorio || "Todo está bajo control.";
+  auth.createUserWithEmailAndPassword(email, password)
+    .then(userCredential => {
+      const user = userCredential.user;
+      document.getElementById("registro-section").style.display = "none";  // Ocultar registro
+      actualizarUI();
+    })
+    .catch(error => {
+      document.getElementById("registro-error").innerText = "Error: " + error.message;
+    });
 }
 
 // Actualizar UI
@@ -122,3 +94,52 @@ function actualizarUI() {
     listaNotas.appendChild(li);
   });
 }
+
+// Funciones de finanzas
+function actualizarTotales() {
+  const ingreso = parseFloat(document.getElementById("ingresos").value) || 0;
+  datosPorMes[mesActual].ingresosTotales += ingreso;
+  document.getElementById("ingresos").value = "";
+  actualizarUI();
+}
+
+function agregarGasto() {
+  const nombre = document.getElementById("nombre-gasto").value;
+  const monto = parseFloat(document.getElementById("monto-gasto").value) || 0;
+
+  if (nombre && monto > 0) {
+    datosPorMes[mesActual].egresosTotales += monto;
+    datosPorMes[mesActual].gastos.push({ nombre, monto });
+    document.getElementById("nombre-gasto").value = "";
+    document.getElementById("monto-gasto").value = "";
+    actualizarUI();
+  }
+}
+
+// Función para guardar ahorros
+function guardarAhorros() {
+  const monto = parseFloat(document.getElementById("ahorros").value) || 0;
+
+  if (monto > 0) {
+    datosPorMes[mesActual].totalAhorros += monto;
+    document.getElementById("ahorros").value = "";
+    actualizarUI();
+  }
+}
+
+// Función para guardar notas
+function guardarNotas() {
+  const nota = document.getElementById("notas").value.trim();
+
+  if (nota) {
+    datosPorMes[mesActual].notas.push(nota);
+    document.getElementById("notas").value = "";
+    actualizarUI();
+  }
+}
+
+// Cargar el estado inicial
+window.onload = () => {
+  document.getElementById("login-section").style.display = "block";  // Mostrar sección de login
+};
+
